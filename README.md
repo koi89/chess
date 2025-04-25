@@ -12,4 +12,4 @@ Un juego de ajedrez en Java.
 ## 🛠️ Instalación
 1. Clona el repositorio:
    ```bash
-   git clone https://github.com/tu-usuario/chess-cats.git
+   git clone https://github.com/koi89/chess
