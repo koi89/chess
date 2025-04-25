@@ -19,9 +19,11 @@ public abstract class Piece {
         this.x = x;
         this.y = y;
     }
-    
+
     public abstract String getSymbol();
 
     public abstract boolean isValidMove(int fromX, int fromY, int toX, int toY);
+
+    public abstract boolean canEat(int fromX, int fromY, int toX, int toY);
     
 }

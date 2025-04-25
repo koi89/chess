@@ -18,7 +18,9 @@ public class Knight extends Piece {
     }
 
     @Override
-    public String toString() {
-        return "Caballo";
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
+        int dx = Math.abs(toX - fromX);
+        int dy = Math.abs(toY - fromY);
+        return (dx == 2 && dy == 1) || (dx == 1 && dy == 2);
     }
 }

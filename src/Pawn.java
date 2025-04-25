@@ -12,39 +12,27 @@ public class Pawn extends Piece {
 
     @Override
     public boolean isValidMove(int fromX, int fromY, int toX, int toY) {
-        return isValidPawnMove(fromX, fromY, toX, toY) || isValidPawnCapture(fromX, fromY, toX, toY);
-    }
-
-    private boolean isValidPawnMove(int fromX, int fromY, int toX, int toY) {
-        if (fromX != toX) {
-            return false;
-        }
-
         int direction = getColor() == Color.WHITE ? -1 : 1;
         int startRow = getColor() == Color.WHITE ? 6 : 1;
 
-        int deltaY = toY - fromY;
-
-        if (deltaY == direction) {
-            return true;
-        } else if (fromY == startRow && deltaY == 2 * direction) {
+        if (fromX == toX) {
+            // Vertical
+            if (toY - fromY == direction) {
+                return true;
+            } else if (fromY == startRow && toY - fromY == 2 * direction) {
+                return true;
+            }
+        } else if (Math.abs(toX - fromX) == 1 && (toY - fromY) == direction) {
+            // Diagonal
             return true;
         }
-
         return false;
     }
 
-    private boolean isValidPawnCapture(int fromX, int fromY, int toX, int toY) {
+    @Override
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
         int direction = getColor() == Color.WHITE ? -1 : 1;
 
-        int deltaX = Math.abs(toX - fromX);
-        int deltaY = toY - fromY;
-
-        return deltaX == 1 && deltaY == direction;
-    }
-
-    @Override
-    public String toString() {
-        return "Peón"; 
+        return Math.abs(toX - fromX) == 1 && (toY - fromY) == direction;
     }
 }

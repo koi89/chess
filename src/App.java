@@ -1,14 +1,12 @@
-
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 class ChessGame extends Frame {
 
     public ChessGame() {
-        setTitle("Java Chess");
+        setTitle("Ajedrez");
         ChessBoard board = new ChessBoard();
         add(board);
         setSize(800, 800);
@@ -16,6 +14,7 @@ class ChessGame extends Frame {
 
         // Handle window closing
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent we) {
                 System.exit(0);
             }
@@ -29,10 +28,11 @@ class ChessGame extends Frame {
 
 class ChessBoard extends Canvas implements MouseListener {
 
-    private Piece[][] board = new Piece[8][8];
+    final Piece[][] board = new Piece[8][8];
     private Piece selectedPiece = null;
     private int selectedCol = -1;
     private int selectedRow = -1;
+    private int move = 0;
     ArrayList<Piece> blancas = new ArrayList<>();
     ArrayList<Piece> negras = new ArrayList<>();
 
@@ -105,7 +105,7 @@ class ChessBoard extends Canvas implements MouseListener {
             }
         }
 
-        // Draw pieces
+        // Dibujar piezas
         g2d.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 40));
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -136,7 +136,7 @@ class ChessBoard extends Canvas implements MouseListener {
         removeHighlight(col, row);
 
         if (selectedPiece == null) {
-            // Selecciona pieza
+            // Seleccionar
             if (isValidPosition(row, col) && piece != null) {
                 selectedPiece = piece;
                 selectedCol = col;
@@ -144,37 +144,31 @@ class ChessBoard extends Canvas implements MouseListener {
                 repaint();
             }
         } else {
-            // Verifica posicion y deselecciona
+            // Deseleccionar
             if (col == selectedCol && row == selectedRow) {
                 selectedPiece = null;
                 selectedCol = -1;
                 selectedRow = -1;
                 repaint();
-
             } else if (isValidPosition(row, col) && isValidMove(col, row)) {
-
                 Piece targetPiece = board[row][col];
 
-                // Eliminar pieza del arrayList
-                if (targetPiece != null) {
-                    if (targetPiece.getColor() == Color.WHITE) {
-                        blancas.remove(targetPiece);
-                    } else {
-                        negras.remove(targetPiece);
+                // Verficar quien mueve
+                if ((selectedPiece.getColor() == Color.WHITE && whiteMove()) ||
+                    (selectedPiece.getColor() == Color.BLACK && !whiteMove())) {
+
+                    // Eliminar pieza
+                    if (targetPiece != null) {
+                        if (targetPiece.getColor() == Color.WHITE) {
+                            blancas.remove(targetPiece);
+                        } else {
+                            negras.remove(targetPiece);
+                        }
                     }
-                    log(selectedPiece, targetPiece);
+
+                    movePiece(col, row);
+                    checkEnd();
                 }
-
-                checkEnd();
-
-                // Mover pieza
-                board[selectedRow][selectedCol] = null;
-                selectedPiece.setPosition(col, row);
-                board[row][col] = selectedPiece;
-                selectedPiece = null;
-                selectedCol = -1;
-                selectedRow = -1;
-                repaint();
             }
         }
     }
@@ -187,23 +181,45 @@ class ChessBoard extends Canvas implements MouseListener {
         if (selectedPiece == null) {
             return false;
         }
-
+    
         int fromX = selectedCol;
         int fromY = selectedRow;
         int toX = toCol;
         int toY = toRow;
-
+    
         Piece targetPiece = board[toY][toX];
-
+    
         if (isFriendly(targetPiece, selectedPiece)) {
             return false;
         }
-
-        return selectedPiece.isValidMove(fromX, fromY, toX, toY);
+    
+        if (targetPiece == null) {
+            // No comer
+            return selectedPiece.isValidMove(fromX, fromY, toX, toY);
+        } else {
+            // Comer
+            return selectedPiece.canEat(fromX, fromY, toX, toY);
+        }
     }
 
     private boolean isFriendly(Piece targetPiece, Piece selectedPiece){
         return targetPiece != null && targetPiece.getColor() == selectedPiece.getColor();
+    }
+
+    private void movePiece(int col, int row){
+        board[selectedRow][selectedCol] = null;
+        selectedPiece.setPosition(col, row);
+        board[row][col] = selectedPiece;
+        selectedPiece = null;
+        selectedCol = -1;
+        selectedRow = -1;
+        repaint();
+        //movimiento actual
+        move++;
+    }
+
+    private boolean whiteMove(){
+        return move % 2 == 0 || move == 0;
     }
 
     private void Highlight(Graphics2D g2d, int squareHeight, int squareWidth){
@@ -235,18 +251,11 @@ class ChessBoard extends Canvas implements MouseListener {
         }
     }
 
-    public void log(Piece selectedPiece, Piece targetPiece){
-        if(selectedPiece.getColor() == Color.BLACK)
-            System.out.println(selectedPiece.toString() + " negra se come a " + targetPiece.toString() + " negra");
-        if(selectedPiece.getColor() == Color.WHITE)
-            System.out.println(selectedPiece.toString() + " blanca se come a " + targetPiece.toString() + " blanca");
-    }
-
     private void checkEnd(){
-        if(negras.toString().contains("Rey") == false){
+        if(negras.toString().contains("King") == false){
             endScreen("blancas");
         }
-        if(blancas.toString().contains("Rey") == false){
+        if(blancas.toString().contains("King") == false){
             endScreen("negras");
         }
     }
@@ -254,27 +263,29 @@ class ChessBoard extends Canvas implements MouseListener {
     private void endScreen(String winner) {
         int option = JOptionPane.showConfirmDialog(
             null,
-            winner + " gana. \n¿Jugar de nuevo?",
+            winner + " ganan. \n¿Jugar de nuevo?", 
             "Fin del juego", 
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
     
         if (option == JOptionPane.YES_OPTION) {
-            Window parentWindow = SwingUtilities.getWindowAncestor(this);
-            parentWindow.dispose(); 
-            new ChessGame(); 
+            new ChessGame(); // Reiniciar
         } else {
-            System.exit(0); 
+            System.exit(0); // Salir
         }
     }
 
-    // Unused mouse listener methods
+    // mouselistener no utilizados
+    @Override
     public void mousePressed(MouseEvent e){}
 
+    @Override
     public void mouseReleased(MouseEvent e) {}
-
+    
+    @Override
     public void mouseEntered(MouseEvent e) {}
-
+    
+    @Override
     public void mouseExited(MouseEvent e) {}
 }

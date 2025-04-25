@@ -18,7 +18,9 @@ public class King extends Piece {
     }
 
     @Override
-    public String toString() {
-        return "Rey";
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
+        int dx = Math.abs(toX - fromX);
+        int dy = Math.abs(toY - fromY);
+        return dx <= 1 && dy <= 1;
     }
 } 

@@ -18,8 +18,9 @@ public class Bishop extends Piece {
     }
 
     @Override
-    public String toString() {
-        return "Alfil";
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
+        int dx = Math.abs(toX - fromX);
+        int dy = Math.abs(toY - fromY);
+        return dx == dy && dx != 0;
     }
-
 }

@@ -16,7 +16,7 @@ public class Rook extends Piece {
     }
 
     @Override
-    public String toString() {
-        return "Torre";
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
+        return (fromX == toX) != (fromY == toY);
     }
 }

@@ -18,7 +18,9 @@ public class Queen extends Piece {
     }
 
     @Override
-    public String toString() {
-        return "Reina";
+    public boolean canEat(int fromX, int fromY, int toX, int toY){
+        int dx = Math.abs(toX - fromX);
+        int dy = Math.abs(toY - fromY);
+        return (dx == dy) || (fromX == toX || fromY == toY);
     }
 } 
