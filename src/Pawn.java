@@ -35,4 +35,9 @@ public class Pawn extends Piece {
 
         return Math.abs(toX - fromX) == 1 && (toY - fromY) == direction;
     }
+
+    @Override
+    public String toString() {
+        return "Peon";
+    }
 }

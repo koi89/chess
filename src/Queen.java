@@ -23,4 +23,9 @@ public class Queen extends Piece {
         int dy = Math.abs(toY - fromY);
         return (dx == dy) || (fromX == toX || fromY == toY);
     }
+
+    @Override
+    public String toString() {
+        return "Reina";
+    }
 } 

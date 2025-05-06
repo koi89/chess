@@ -23,4 +23,9 @@ public class Bishop extends Piece {
         int dy = Math.abs(toY - fromY);
         return dx == dy && dx != 0;
     }
+
+    @Override
+    public String toString() {
+        return "Alfil";
+    }
 }

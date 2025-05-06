@@ -23,4 +23,9 @@ public class Knight extends Piece {
         int dy = Math.abs(toY - fromY);
         return (dx == 2 && dy == 1) || (dx == 1 && dy == 2);
     }
+
+    @Override
+    public String toString() {
+        return "Caballo";
+    }
 }

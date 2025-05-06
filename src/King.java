@@ -23,4 +23,9 @@ public class King extends Piece {
         int dy = Math.abs(toY - fromY);
         return dx <= 1 && dy <= 1;
     }
+
+    @Override
+    public String toString() {
+        return "Rey";
+    }
 } 

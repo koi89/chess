@@ -19,4 +19,9 @@ public class Rook extends Piece {
     public boolean canEat(int fromX, int fromY, int toX, int toY){
         return (fromX == toX) != (fromY == toY);
     }
+
+    @Override
+    public String toString() {
+        return "Torre";
+    }
 }

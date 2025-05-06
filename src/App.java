@@ -1,7 +1,15 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
+import java.util.Random; 
+import java.util.HashMap;
 
 class ChessGame extends Frame {
 
@@ -9,10 +17,10 @@ class ChessGame extends Frame {
         setTitle("Ajedrez");
         ChessBoard board = new ChessBoard();
         add(board);
-        setSize(800, 800);
+        setSize(600, 600);
         setVisible(true);
 
-        // Handle window closing
+        // Manejar el cierre de la ventana
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent we) {
@@ -26,7 +34,7 @@ class ChessGame extends Frame {
     }
 }
 
-class ChessBoard extends Canvas implements MouseListener {
+class ChessBoard extends Canvas implements MouseListener, Serializable{
 
     final Piece[][] board = new Piece[8][8];
     private Piece selectedPiece = null;
@@ -35,11 +43,15 @@ class ChessBoard extends Canvas implements MouseListener {
     private int move = 0;
     ArrayList<Piece> blancas = new ArrayList<>();
     ArrayList<Piece> negras = new ArrayList<>();
+    ArrayList<String> log = new ArrayList<>();
+    private Random random = new Random(); 
+    private HashMap<Integer, Character> colToLetter = new HashMap<>();
 
     public ChessBoard() {
         setBackground(Color.LIGHT_GRAY);
         addMouseListener(this);
         initializeBoard();
+        initializeColToLetterMap(); 
     }
 
     private void initializeBoard() {
@@ -84,6 +96,18 @@ class ChessBoard extends Canvas implements MouseListener {
         }
     }
 
+    private void initializeColToLetterMap() {
+        colToLetter.put(0, 'a');
+        colToLetter.put(1, 'b');
+        colToLetter.put(2, 'c');
+        colToLetter.put(3, 'd');
+        colToLetter.put(4, 'e');
+        colToLetter.put(5, 'f');
+        colToLetter.put(6, 'g');
+        colToLetter.put(7, 'h');
+    }
+
+
     @Override
     public void paint(Graphics g) {
         super.paint(g);
@@ -97,7 +121,7 @@ class ChessBoard extends Canvas implements MouseListener {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
                 if ((row + col) % 2 == 0) {
-                    g2d.setColor(new Color(240, 217, 181)); //Cuadrado blanco
+                    g2d.setColor(new Color(240, 217, 181)); // Cuadrado blanco
                 } else {
                     g2d.setColor(new Color(181, 136, 99)); // Cuadrado negro
                 }
@@ -132,7 +156,8 @@ class ChessBoard extends Canvas implements MouseListener {
         int col = e.getX() / (getWidth() / 8);
         int row = e.getY() / (getHeight() / 8);
         Piece piece = board[row][col];
-        
+        boolean RandomizePiece;
+
         removeHighlight(col, row);
 
         if (selectedPiece == null) {
@@ -153,11 +178,9 @@ class ChessBoard extends Canvas implements MouseListener {
             } else if (isValidPosition(row, col) && isValidMove(col, row)) {
                 Piece targetPiece = board[row][col];
 
-                // Verficar quien mueve
                 if ((selectedPiece.getColor() == Color.WHITE && whiteMove()) ||
                     (selectedPiece.getColor() == Color.BLACK && !whiteMove())) {
 
-                    // Eliminar pieza
                     if (targetPiece != null) {
                         if (targetPiece.getColor() == Color.WHITE) {
                             blancas.remove(targetPiece);
@@ -166,7 +189,19 @@ class ChessBoard extends Canvas implements MouseListener {
                         }
                     }
 
+                    if(targetPiece != null)
+                        logCapture(selectedPiece, targetPiece, col, row);
+                    else
+                        log(selectedPiece, col, row); 
+
+                    //RandomizePiece = RandomizePiece(selectedPiece);
+                    //Color movedPieceColor = selectedPiece.getColor();
                     movePiece(col, row);
+
+                    /*
+                    if(RandomizePiece == false)
+                        randomice(movedPieceColor, col, row);
+                    */
                     checkEnd();
                 }
             }
@@ -177,27 +212,30 @@ class ChessBoard extends Canvas implements MouseListener {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
+    private boolean RandomizePiece(Piece selectedPiece){
+        return (selectedPiece instanceof King) || (selectedPiece instanceof Pawn);
+    }
+
     private boolean isValidMove(int toCol, int toRow) {
         if (selectedPiece == null) {
             return false;
         }
-    
+
         int fromX = selectedCol;
         int fromY = selectedRow;
         int toX = toCol;
         int toY = toRow;
-    
+
         Piece targetPiece = board[toY][toX];
-    
+
         if (isFriendly(targetPiece, selectedPiece)) {
             return false;
         }
-    
+
+        // Verificar si el movimiento es valido
         if (targetPiece == null) {
-            // No comer
             return selectedPiece.isValidMove(fromX, fromY, toX, toY);
         } else {
-            // Comer
             return selectedPiece.canEat(fromX, fromY, toX, toY);
         }
     }
@@ -214,23 +252,23 @@ class ChessBoard extends Canvas implements MouseListener {
         selectedCol = -1;
         selectedRow = -1;
         repaint();
-        //movimiento actual
+        // Incrementar el contador de movimientos
         move++;
     }
 
     private boolean whiteMove(){
-        return move % 2 == 0 || move == 0;
+        return move % 2 == 0;
     }
 
     private void Highlight(Graphics2D g2d, int squareHeight, int squareWidth){
         g2d.setColor(Color.YELLOW);
-            g2d.setStroke(new BasicStroke(3));
-            g2d.drawRect(selectedCol * squareWidth, selectedRow * squareHeight, squareWidth, squareHeight);
+        g2d.setStroke(new BasicStroke(3));
+        g2d.drawRect(selectedCol * squareWidth, selectedRow * squareHeight, squareWidth, squareHeight);
     }
 
     private void removeHighlight(int toCol, int toRow) {
         if (selectedRow == -1 || selectedCol == -1) {
-            return; 
+            return;
         }
 
         int width = getWidth();
@@ -238,38 +276,108 @@ class ChessBoard extends Canvas implements MouseListener {
         int squareWidth = width / 8;
         int squareHeight = height / 8;
 
-        Piece targetPiece = board[toRow][toCol];
+        int x = selectedCol * squareWidth;
+        int y = selectedRow * squareHeight;
 
-        if(targetPiece == selectedPiece){
-            int x = selectedCol * squareWidth;
-            int y = selectedRow * squareHeight;
-            
-            int buffer = 2;
-            repaint(x - buffer, y - buffer, 
-                    squareWidth + 2 * buffer, 
-                    squareHeight + 2 * buffer);
+        int buffer = 2; // Añadir un pequeño buffer para asegurar que todo el resaltado se vuelva a dibujar
+        repaint(x - buffer, y - buffer,
+                squareWidth + 2 * buffer,
+                squareHeight + 2 * buffer);
+    }
+
+    private void randomice(Color color, int x, int y){
+        int randomNum = random.nextInt(4);
+
+        // Reemplazar la pieza en la nueva posición (y, x) con un tipo aleatorio
+        switch (randomNum) {
+            case 0:
+                board[y][x] = new Rook(color, x, y);
+                break;
+            case 1:
+                board[y][x] = new Queen(color, x, y);
+                break;
+            case 2:
+                board[y][x] = new Bishop(color, x, y);
+                break;
+            case 3:
+                board[y][x] = new Knight(color, x, y);
+                break;
+        }
+    }
+
+    private void log(Piece selectedPiece, int toCol, int toRow){
+        int fromY = 8 - selectedPiece.getY();
+        char fromXLetter = colToLetter.get(selectedPiece.getX());
+        int toY = 8 - toRow;
+        char toXLetter = colToLetter.get(toCol);
+
+        String logg = selectedPiece.toString() + " en (" + fromXLetter + ", " + fromY + ") se mueve a (" + toXLetter + ", " + toY + ")";
+
+        System.out.println(logg);
+        log.add(logg);
+    }
+
+    private void logCapture(Piece selectedPiece, Piece targetPiece, int toCol, int toRow){
+        int fromY = 8 - selectedPiece.getY();
+        char fromXLetter = colToLetter.get(selectedPiece.getX());
+        int targetY = 8 - targetPiece.getY();
+        char targetXLetter = colToLetter.get(targetPiece.getX());
+
+        String logg = selectedPiece.toString() + " en (" + fromXLetter + ", " + fromY + ") captura a " + targetPiece.toString() + " en (" + targetXLetter + ", " + targetY + ")";
+
+        System.out.println(logg);
+        log.add(logg);
+    }
+
+    public static void saveLog(ArrayList<String> log) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("partida.txt"))) {
+            oos.writeObject(log);
+            System.out.println("Log guardado correctamente en partida.txt");
+        } catch (IOException e) {
+            System.err.println("Error al guardar el log: " + e.getMessage());
         }
     }
 
     private void checkEnd(){
-        if(negras.toString().contains("King") == false){
-            endScreen("blancas");
+        // Verificar si alguno de los Reyes ha sido capturado
+        boolean blackKingExists = false;
+        for(Piece p : negras) {
+            if (p instanceof King) {
+                blackKingExists = true;
+                break;
+            }
         }
-        if(blancas.toString().contains("King") == false){
+
+        boolean whiteKingExists = false;
+        for(Piece p : blancas) {
+            if (p instanceof King) {
+                whiteKingExists = true;
+                break;
+            }
+        }
+
+        if (!blackKingExists) {
+            endScreen("blancas");
+        } else if (!whiteKingExists) {
             endScreen("negras");
         }
     }
 
     private void endScreen(String winner) {
+        saveLog(log);
+
         int option = JOptionPane.showConfirmDialog(
             null,
-            winner + " ganan. \n¿Jugar de nuevo?", 
-            "Fin del juego", 
+            winner + " ganan. \n¿Jugar de nuevo?",
+            "Fin del juego",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE
         );
-    
+
         if (option == JOptionPane.YES_OPTION) {
+            // Desechar la ventana de juego actual e iniciar una nueva
+            Frame currentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            currentFrame.dispose();
             new ChessGame(); // Reiniciar
         } else {
             System.exit(0); // Salir
@@ -282,10 +390,10 @@ class ChessBoard extends Canvas implements MouseListener {
 
     @Override
     public void mouseReleased(MouseEvent e) {}
-    
+
     @Override
     public void mouseEntered(MouseEvent e) {}
-    
+
     @Override
     public void mouseExited(MouseEvent e) {}
 }
